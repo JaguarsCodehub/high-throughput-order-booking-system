@@ -1,0 +1,33 @@
+{
+  "name": "order-booking-system",
+  "version": "1.0.0",
+  "description": "Event-driven order booking system using Kafka",
+  "scripts": {
+    "dev:order": "cross-env OTEL_SERVICE_NAME=order-service ts-node-dev --require ./src/tracing.ts --respawn src/services/order-service/index.ts",
+    "dev:inventory": "cross-env OTEL_SERVICE_NAME=inventory-service ts-node-dev --require ./src/tracing.ts --respawn src/services/inventory-service/index.ts",
+    "dev:payment": "cross-env OTEL_SERVICE_NAME=payment-service ts-node-dev --require ./src/tracing.ts --respawn src/services/payment-service/index.ts",
+    "dev:notification": "cross-env OTEL_SERVICE_NAME=notification-service ts-node-dev --require ./src/tracing.ts --respawn src/services/notification-service/index.ts",
+    "build": "tsc",
+    "create-topics": "bash scripts/create-topics.sh"
+  },
+  "dependencies": {
+    "@opentelemetry/api": "^1.9.1",
+    "@opentelemetry/auto-instrumentations-node": "^0.77.0",
+    "@opentelemetry/exporter-trace-otlp-http": "^0.219.0",
+    "@opentelemetry/sdk-node": "^0.219.0",
+    "cross-env": "^10.1.0",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "kafkajs": "^2.2.4",
+    "pg": "^8.12.0",
+    "uuid": "^10.0.0"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/node": "^20.14.0",
+    "@types/pg": "^8.11.6",
+    "@types/uuid": "^10.0.0",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^5.4.5"
+  }
+}

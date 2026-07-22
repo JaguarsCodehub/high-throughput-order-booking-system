@@ -17,6 +17,4 @@ sleep 10
 kubectl wait --namespace ingress-nginx --for=condition=ready pod --selector=app.kubernetes.io/component=controller --timeout=120s
 
 # 9. Build and Deploy
-npm install
-npm run build
 bash scripts/v0-deploy.sh

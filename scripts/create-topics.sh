@@ -24,7 +24,7 @@ create_topic() {
   local PARTS=$2
   local RETENTION=$3
 
-  docker exec $KAFKA_CONTAINER kafka-topics \
+  kubectl exec -i deployment/kafka -n obs-v0 -- kafka-topics \
     --bootstrap-server localhost:9092 \
     --create \
     --if-not-exists \
@@ -65,7 +65,7 @@ create_topic "notification.send.dlq"  $DLQ_PARTITIONS $DLQ_RETENTION_MS
 
 echo ""
 echo "📋  All topics:"
-docker exec $KAFKA_CONTAINER kafka-topics \
+kubectl exec -i deployment/kafka -n obs-v0 -- kafka-topics \
   --bootstrap-server localhost:9092 \
   --list
 

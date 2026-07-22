@@ -13,7 +13,7 @@
 
     - name: Build Docker images
       ansible.builtin.shell: |
-        docker build -t {{ images[item] }} --build-arg SERVICE_NAME={{ item }} .
+        docker build -t {{ images[item | replace('-', '_')] }} --build-arg SERVICE_NAME={{ item }} .
       args:
         chdir: "{{ project_dir }}"
       loop:
@@ -26,7 +26,7 @@
 
     - name: Load images into KIND
       ansible.builtin.shell: |
-        kind load docker-image {{ images[item] }} --name order-booking
+        kind load docker-image {{ images[item | replace('-', '_')] }} --name order-booking
       loop:
         - order-service
         - inventory-service

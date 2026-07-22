@@ -3,8 +3,12 @@ set -e
 
 # Installation steps removed because tools are already installed.
 
-# 7. Create KIND cluster using the saved config
-kind create cluster --config k8s/kind-config.yaml
+# 7. Create KIND cluster using the saved config (only if it doesn't exist)
+if ! kind get clusters | grep -q "^order-booking$"; then
+    kind create cluster --config k8s/kind-config.yaml
+else
+    echo "Cluster 'order-booking' already exists, skipping creation."
+fi
 
 # 8. Install ingress-nginx (for later V1)
 kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.8.1/deploy/static/provider/kind/deploy.yaml

@@ -1,0 +1,210 @@
+╔════════════════════════════════════════════════════════════════════════════════╗
+║                     V0 KUBERNETES DEPLOYMENT - QUICK REFERENCE                ║
+║              Order Booking System | t3.small EC2 | KIND | 1 Hour Setup        ║
+╚════════════════════════════════════════════════════════════════════════════════╝
+
+┌─ PHASE 0: READ THIS FIRST ─────────────────────────────────────────────────────┐
+│  1. Read: V0_EXECUTIVE_SUMMARY.md (5 mins)
+│  2. Read: V0_IMPLEMENTATION_ROADMAP.md (10 mins)
+│  3. SSH into your t3.small EC2 instance
+│  4. Clone/navigate to ~/order-booking-system
+└────────────────────────────────────────────────────────────────────────────────┘
+
+┌─ ONE-SHOT AUTOMATED SETUP (Recommended) ──────────────────────────────────────┐
+│  $ cd ~/order-booking-system
+│  $ bash V0_QUICK_START.sh
+│  
+│  This runs all phases 1-6 automatically:
+│  ✓ Installs Docker, kind, kubectl, helm, k6
+│  ✓ Creates KIND cluster
+│  ✓ Builds Docker images
+│  ✓ Deploys all services
+│  ✓ Initializes database
+│  
+│  Total time: ~60 mins
+│  When done: services are running at :30001, :30002, :30003, :30004
+└────────────────────────────────────────────────────────────────────────────────┘
+
+┌─ MANUAL SETUP (If you want to understand each step) ──────────────────────────┐
+│  Follow V0_IMPLEMENTATION_ROADMAP.md phases 1-7 (same commands but explained)
+│  Total time: ~60 mins
+└────────────────────────────────────────────────────────────────────────────────┘
+
+┌─ VERIFY DEPLOYMENT ────────────────────────────────────────────────────────────┐
+│  $ curl http://localhost:30001/health
+│  Expected: {"status":"alive","service":"order-service"}
+│  
+│  $ kubectl get pods -n obs-v0
+│  Expected: All pods in "Running" state
+└────────────────────────────────────────────────────────────────────────────────┘
+
+┌─ LOAD TEST (CRASH IT!) ────────────────────────────────────────────────────────┐
+│  Terminal 1 - Monitor pods:
+│  $ watch -n 1 'kubectl get pods -n obs-v0 -o wide'
+│  
+│  Terminal 2 - Run load test:
+│  $ k6 run load-test.js
+│  
+│  Expected results after 2-3 mins:
+│  ✗ order-service: OOMKilled
+│  ✗ inventory-service: CrashLoopBackOff
+│  ✗ payment-service: CrashLoopBackOff
+│  ✗ notification-service: CrashLoopBackOff
+│  ✓ postgres: Running (data intact)
+│  ✓ kafka: Running (data intact)
+│  
+│  This is the GOAL of v0 - demonstrate it breaks under load!
+└────────────────────────────────────────────────────────────────────────────────┘
+
+┌─ CAPTURE EVIDENCE (For your blog post) ────────────────────────────────────────┐
+│  $ kubectl describe pods -n obs-v0 > crash-pods.log
+│  $ kubectl get events -n obs-v0 --sort-by='.lastTimestamp' > crash-events.log
+│  $ kubectl top pods -n obs-v0 > crash-resources.log
+│  $ dmesg | tail -50 > oomkiller.log
+│  
+│  Also screenshot:
+│  - Pod status showing CrashLoopBackOff
+│  - Resource usage spikes
+│  - k6 output showing failed requests
+└────────────────────────────────────────────────────────────────────────────────┘
+
+┌─ CLEANUP (Before V1) ──────────────────────────────────────────────────────────┐
+│  $ kubectl delete namespace obs-v0
+│  $ kind delete cluster --name order-booking
+│  $ docker rmi order-service:latest inventory-service:latest \
+│      payment-service:latest notification-service:latest
+└────────────────────────────────────────────────────────────────────────────────┘
+
+┌─ KEY COMMANDS ────────────────────────────────────────────────────────────────┐
+│  Watch pods in real-time:
+│    watch -n 1 'kubectl get pods -n obs-v0'
+│  
+│  View service logs:
+│    kubectl logs -n obs-v0 -l app=order-service -f
+│  
+│  Check pod details (shows OOMKilled reason):
+│    kubectl describe pod -n obs-v0 -l app=order-service
+│  
+│  Resource usage:
+│    kubectl top pods -n obs-v0
+│    kubectl top nodes
+│  
+│  Kubernetes events (shows failures):
+│    kubectl get events -n obs-v0 --sort-by='.lastTimestamp'
+│  
+│  View all services:
+│    kubectl get all -n obs-v0
+└────────────────────────────────────────────────────────────────────────────────┘
+
+┌─ SERVICE ENDPOINTS (Before crash) ────────────────────────────────────────────┐
+│  Order Service (API):        http://localhost:30001/health
+│  Inventory Service (Worker): http://localhost:30002/health
+│  Payment Service (Worker):   http://localhost:30003/health
+│  Notification Service (Wrk): http://localhost:30004/health
+│  
+│  Test order creation:
+│    curl -X POST http://localhost:30001/api/orders \
+│      -H 'Content-Type: application/json' \
+│      -d '{"userId":1,"items":[{"productId":1,"quantity":1,"unitPrice":100}],"totalAmount":100}'
+└────────────────────────────────────────────────────────────────────────────────┘
+
+┌─ WHAT'S IN V0 (Intentionally Broken) ──────────────────────────────────────────┐
+│  ✗ No resource limits       → Pods consume unlimited memory → OOMKilled
+│  ✗ No liveness probes       → Dead pods don't restart
+│  ✗ No readiness probes      → Traffic routes to unready pods
+│  ✗ No startup probes        → Services don't wait for dependencies
+│  ✗ No PersistentVolumes     → Data lost on pod restart
+│  ✗ No Ingress              → Exposed via NodePort (ugly, insecure)
+│  ✗ :latest image tags      → Non-reproducible, slow
+│  ✗ Single replicas         → No redundancy
+│  ✗ Running as root         → Security risk
+│  ✗ Plaintext secrets       → Password in git
+│  ✗ No CI/CD                → Manual deployments
+│  ✗ No graceful shutdown    → In-flight requests drop
+│  ✗ No observability        → Blind to what's happening
+│  
+│  Each of these will be FIXED in V1!
+└────────────────────────────────────────────────────────────────────────────────┘
+
+┌─ FILES YOU HAVE ──────────────────────────────────────────────────────────────┐
+│  Documentation:
+│    V0_EXECUTIVE_SUMMARY.md          - Start here (5 min overview)
+│    V0_IMPLEMENTATION_ROADMAP.md     - Complete 11-phase execution plan
+│    V0_SETUP_SUMMARY.md              - Anti-patterns & failures explained
+│    V0_DEPLOYMENT_GUIDE.md           - Detailed step-by-step guide
+│    V0_QUICK_REFERENCE.txt           - This file!
+│  
+│  Scripts:
+│    V0_QUICK_START.sh                - One-shot automated setup (60 mins)
+│    scripts/v0-deploy.sh             - Deploy/redeploy anytime
+│    load-test.js                     - k6 load test script
+│  
+│  Kubernetes Manifests (in k8s/):
+│    v0-namespace.yaml                - Create obs-v0 namespace
+│    v0-configmap.yaml                - Configuration
+│    v0-secret.yaml                   - Secrets (plaintext ❌)
+│    v0-postgres.yaml                 - Database (no probes/limits)
+│    v0-kafka.yaml                    - Message broker (KRaft mode)
+│    v0-order-service.yaml            - API service
+│    v0-inventory-service.yaml        - Worker
+│    v0-payment-service.yaml          - Worker
+│    v0-notification-service.yaml     - Worker
+│  
+│  Code Changes (in your services):
+│    Added /health endpoint (for liveness probes in v1)
+│    Added /ready endpoint (checks Kafka/Postgres connectivity)
+│    Added Express servers to worker services
+└────────────────────────────────────────────────────────────────────────────────┘
+
+┌─ EXPECTED TIMELINE ───────────────────────────────────────────────────────────┐
+│  Setup (Docker, kind, kubectl, helm, k6): 15 mins
+│  KIND cluster creation:                    5 mins
+│  Ingress installation:                     5 mins
+│  Build project:                            15 mins
+│  Deploy v0:                                5 mins
+│  Basic testing:                            5 mins
+│  Load testing (crash):                     10 mins
+│  Capture evidence:                         5 mins
+│  ──────────────────────────────────────────────
+│  Total:                                    ~65 mins
+│  
+│  If using V0_QUICK_START.sh: ~60 mins start-to-finish
+└────────────────────────────────────────────────────────────────────────────────┘
+
+┌─ SUCCESS CRITERIA ────────────────────────────────────────────────────────────┐
+│  ✓ Deployment runs successfully
+│  ✓ Health checks pass before load test
+│  ✓ Can create orders manually
+│  ✓ Load test runs and pods START to fail
+│  ✓ See OOMKilled or CrashLoopBackOff status
+│  ✓ Understand WHY each component failed
+│  ✓ Captured evidence for blog post
+│  
+│  If all above: V0 is successful! Move to V1.
+└────────────────────────────────────────────────────────────────────────────────┘
+
+┌─ NEXT STEPS ──────────────────────────────────────────────────────────────────┐
+│  After V0 crashes:
+│  1. Save all evidence (logs, screenshots, pod descriptions)
+│  2. Clean up the v0 namespace and cluster
+│  3. Write a blog post/X thread documenting the failures
+│  4. Move to V1_DEPLOYMENT_GUIDE.md (fixes all v0 anti-patterns)
+│  
+│  V1 will add:
+│  ✓ Resource limits (fix OOMKilled)
+│  ✓ Liveness/readiness/startup probes (fix CrashLoopBackOff)
+│  ✓ PersistentVolumes (fix data loss)
+│  ✓ Ingress (replace NodePort)
+│  ✓ HPA (horizontal pod autoscaling)
+│  ✓ Helm charts (templated deployments)
+│  ✓ CI/CD pipeline (GitHub Actions + ArgoCD)
+│  ✓ Sealed Secrets (secure password management)
+│  ✓ Graceful shutdown handlers
+│  ✓ Observability (Prometheus + structured logging)
+│  
+│  Each fix maps directly to v0 failures!
+└────────────────────────────────────────────────────────────────────────────────┘
+
+READY? Start with: bash V0_QUICK_START.sh
+
+Good luck! 🚀

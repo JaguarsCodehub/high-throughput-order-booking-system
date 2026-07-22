@@ -22,12 +22,12 @@ export let options = {
 };
 
 export default function () {
-  // Generate random order payload
+  // Generate random order payload with valid UUID strings
   let payload = {
-    userId: Math.floor(Math.random() * 1000) + 1,
+    userId: `00000000-0000-0000-0000-${String(Math.floor(Math.random() * 1000) + 1).padStart(12, '0')}`,
     items: [
       {
-        productId: Math.floor(Math.random() * 10) + 1,
+        productId: `00000000-0000-0000-0000-${String(Math.floor(Math.random() * 10) + 1).padStart(12, '0')}`,
         quantity: Math.floor(Math.random() * 5) + 1,
         unitPrice: Math.floor(Math.random() * 500) + 10,
       },

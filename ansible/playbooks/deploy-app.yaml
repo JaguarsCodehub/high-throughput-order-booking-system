@@ -1,0 +1,72 @@
+---
+- name: Deploy Order Booking System
+  hosts: all
+  become: no  # Run as ubuntu user for Docker and kubectl
+  tasks:
+    - name: Ensure KIND cluster is running
+      ansible.builtin.shell: |
+        if ! kind get clusters | grep -q 'order-booking'; then
+          kind create cluster --config {{ project_dir }}/k8s/kind-config.yaml
+        fi
+      register: kind_cluster
+      changed_when: "'Creating cluster' in kind_cluster.stdout"
+
+    - name: Build Docker images
+      ansible.builtin.shell: |
+        docker build -t {{ images[item] }} --build-arg SERVICE_NAME={{ item }} .
+      args:
+        chdir: "{{ project_dir }}"
+      loop:
+        - order-service
+        - inventory-service
+        - payment-service
+        - notification-service
+      register: build_result
+      changed_when: "'Writing image' in build_result.stdout"
+
+    - name: Load images into KIND
+      ansible.builtin.shell: |
+        kind load docker-image {{ images[item] }} --name order-booking
+      loop:
+        - order-service
+        - inventory-service
+        - payment-service
+        - notification-service
+
+    - name: Apply Kubernetes core manifests (Namespace, ConfigMap, Secret)
+      ansible.builtin.command: kubectl apply -f {{ project_dir }}/k8s/{{ item }}
+      loop:
+        - v0-namespace.yaml
+        - v0-configmap.yaml
+        - v0-secret.yaml
+
+    - name: Apply Kafka manifest
+      ansible.builtin.command: kubectl apply -f {{ project_dir }}/k8s/v0-kafka.yaml
+
+    - name: Wait for Kafka to be ready
+      ansible.builtin.shell: |
+        kubectl wait --for=condition=ready pod -l app=kafka -n {{ namespace }} --timeout=120s
+      register: kafka_wait
+      retries: 3
+      delay: 10
+      until: kafka_wait.rc == 0
+
+    - name: Apply application service manifests
+      ansible.builtin.command: kubectl apply -f {{ project_dir }}/k8s/{{ item }}
+      loop:
+        - v0-order-service.yaml
+        - v0-inventory-service.yaml
+        - v0-payment-service.yaml
+        - v0-notification-service.yaml
+
+    - name: Wait for order-service to be ready
+      ansible.builtin.shell: |
+        kubectl wait --for=condition=ready pod -l app=order-service -n {{ namespace }} --timeout=60s
+
+    - name: Display cluster status
+      ansible.builtin.command: kubectl get pods -n {{ namespace }}
+      register: pods_status
+
+    - name: Print cluster status
+      ansible.builtin.debug:
+        msg: "{{ pods_status.stdout_lines }}"

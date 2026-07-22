@@ -1,0 +1,19 @@
+---
+# Global variables for the Order Booking System K8s deployment
+namespace: obs-v0
+project_dir: "/home/ubuntu/high-throughput-order-booking-system"
+
+# Docker image tags
+images:
+  order_service: "order-service:latest"
+  inventory_service: "inventory-service:latest"
+  payment_service: "payment-service:latest"
+  notification_service: "notification-service:latest"
+
+# NodePorts for external access (Anti-pattern for V0)
+ports:
+  order: 30001
+  inventory: 30002
+  payment: 30003
+  notification: 30004
+  kafka: 30092

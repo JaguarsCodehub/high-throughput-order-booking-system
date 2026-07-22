@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
       - name: kafka
-        image: bitnami/kafka:3.7
+        image: bitnami/kafka:3.7.0
         # Anti-pattern: imagePullPolicy: Always
         imagePullPolicy: Always
         # Anti-pattern: no resource limits

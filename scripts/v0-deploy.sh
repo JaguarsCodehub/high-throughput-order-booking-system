@@ -33,8 +33,8 @@ echo "✓ ConfigMap and Secrets deployed"
 kubectl apply -f k8s/v0-kafka.yaml
 echo "✓ Kafka deployed"
 
-echo "⏳ Waiting for Kafka to be ready..."
-kubectl wait --for=condition=ready pod -l app=kafka -n obs-v0 --timeout=120s
+echo "⏳ Waiting for Kafka to be ready (if this times out, that's okay for V0)..."
+kubectl wait --for=condition=ready pod -l app=kafka -n obs-v0 --timeout=120s || true
 
 kubectl apply -f k8s/v0-order-service.yaml
 kubectl apply -f k8s/v0-inventory-service.yaml

@@ -1,0 +1,53 @@
+{{- range $key, $service := .Values.microservices }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $service.name }}
+  labels:
+    app: {{ $service.name }}
+spec:
+  replicas: {{ $service.replicas }}
+  selector:
+    matchLabels:
+      app: {{ $service.name }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+  template:
+    metadata:
+      labels:
+        app: {{ $service.name }}
+    spec:
+      securityContext:
+        runAsUser: 0
+      containers:
+      - name: {{ $service.name }}
+        image: {{ $service.image }}
+        imagePullPolicy: Never
+        envFrom:
+        - configMapRef:
+            name: obs-config
+        - secretRef:
+            name: obs-secrets
+        env:
+        - name: OTEL_SERVICE_NAME
+          value: {{ $service.name | quote }}
+        ports:
+        - containerPort: {{ $service.port }}
+        resources: {{ toYaml $service.resources | indent 10 }}
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: {{ $service.port }}
+          initialDelaySeconds: 10
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: {{ $service.port }}
+          initialDelaySeconds: 5
+          periodSeconds: 10
+---
+{{- end }}

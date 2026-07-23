@@ -1,0 +1,17 @@
+{{- range $key, $service := .Values.microservices }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $service.name }}
+  labels:
+    app: {{ $service.name }}
+spec:
+  type: ClusterIP
+  selector:
+    app: {{ $service.name }}
+  ports:
+    - port: {{ $service.port }}
+      targetPort: {{ $service.port }}
+      name: http
+---
+{{- end }}

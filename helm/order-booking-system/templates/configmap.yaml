@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: obs-config
+data:
+  KAFKA_BROKERS: {{ .Values.global.kafkaBrokers | quote }}
+  ORDER_SERVICE_PORT: {{ .Values.microservices.orderService.port | quote }}
+  INVENTORY_SERVICE_PORT: {{ .Values.microservices.inventoryService.port | quote }}
+  PAYMENT_SERVICE_PORT: {{ .Values.microservices.paymentService.port | quote }}
+  NOTIFICATION_SERVICE_PORT: {{ .Values.microservices.notificationService.port | quote }}
+  NODE_ENV: {{ .Values.global.environment | quote }}

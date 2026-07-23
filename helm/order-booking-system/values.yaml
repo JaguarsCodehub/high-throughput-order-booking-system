@@ -1,0 +1,116 @@
+# Default values for order-booking-system.
+
+global:
+  environment: production
+  kafkaBrokers: "kafka-service:9092"
+  databaseUrl: "cG9zdGdyZXNxbDovL3Bvc3RncmVzLmx6dHRqYm90a3ZidWlqZ3J5YXJlOmllTWRoQ2VsUlB3aE10QW5AYXdzLTEtYXAtc291dGhlYXN0LTIucG9vbGVyLnN1cGFiYXNlLmNvbTo1NDMyL3Bvc3RncmVz"
+  honeycombApiKey: "WXlNWGlXMk4yNmlmV2ZGbFJ5eTVXUA=="
+
+microservices:
+  orderService:
+    name: order-service
+    image: order-service:latest
+    port: 3001
+    replicas: 3
+    hpa:
+      enabled: true
+      minReplicas: 3
+      maxReplicas: 10
+      targetCPUUtilizationPercentage: 70
+    resources:
+      requests:
+        memory: "128Mi"
+        cpu: "100m"
+      limits:
+        memory: "256Mi"
+        cpu: "250m"
+    ingress:
+      enabled: true
+      path: /api/orders
+      host: api.obs.local
+
+  inventoryService:
+    name: inventory-service
+    image: inventory-service:latest
+    port: 3002
+    replicas: 2
+    hpa:
+      enabled: true
+      minReplicas: 2
+      maxReplicas: 5
+      targetCPUUtilizationPercentage: 70
+    resources:
+      requests:
+        memory: "128Mi"
+        cpu: "100m"
+      limits:
+        memory: "256Mi"
+        cpu: "250m"
+    ingress:
+      enabled: false
+
+  paymentService:
+    name: payment-service
+    image: payment-service:latest
+    port: 3003
+    replicas: 2
+    hpa:
+      enabled: true
+      minReplicas: 2
+      maxReplicas: 5
+      targetCPUUtilizationPercentage: 70
+    resources:
+      requests:
+        memory: "128Mi"
+        cpu: "100m"
+      limits:
+        memory: "256Mi"
+        cpu: "250m"
+    ingress:
+      enabled: false
+
+  notificationService:
+    name: notification-service
+    image: notification-service:latest
+    port: 3004
+    replicas: 2
+    hpa:
+      enabled: true
+      minReplicas: 2
+      maxReplicas: 5
+      targetCPUUtilizationPercentage: 70
+    resources:
+      requests:
+        memory: "128Mi"
+        cpu: "100m"
+      limits:
+        memory: "256Mi"
+        cpu: "250m"
+    ingress:
+      enabled: false
+
+kafka:
+  enabled: true
+  replicas: 1
+  image: confluentinc/cp-kafka:7.6.1
+  resources:
+    requests:
+      memory: "512Mi"
+      cpu: "500m"
+    limits:
+      memory: "1Gi"
+      cpu: "1000m"
+  storage: 5Gi
+
+zookeeper:
+  enabled: true
+  replicas: 1
+  image: confluentinc/cp-zookeeper:7.6.1
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "200m"
+    limits:
+      memory: "512Mi"
+      cpu: "500m"
+  storage: 1Gi

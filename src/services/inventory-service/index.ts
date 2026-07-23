@@ -1,3 +1,4 @@
+import express from 'express';
 import { kafka } from '../../kafka/client';
 import { TOPICS } from '../../kafka/topics';
 import { pool } from '../../db/client';
@@ -5,8 +6,18 @@ import { pool } from '../../db/client';
 const consumer = kafka.consumer({ groupId: 'inventory-service-group' });
 const producer = kafka.producer();
 
+const app = express();
+app.get('/health', (req, res) => {
+  res.status(200).send('OK');
+});
+const PORT = process.env.INVENTORY_SERVICE_PORT || 3002;
+
 const startWorker = async () => {
   try {
+    app.listen(PORT, () => {
+      console.log(`Inventory Service health check listening on port ${PORT}`);
+    });
+
     // 1. Connect to Kafka
     await producer.connect();
     await consumer.connect();

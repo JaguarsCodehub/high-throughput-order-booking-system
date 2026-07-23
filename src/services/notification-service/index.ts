@@ -1,11 +1,22 @@
+import express from 'express';
 import { kafka } from '../../kafka/client';
 import { TOPICS } from '../../kafka/topics';
 import { pool } from '../../db/client';
 
 const consumer = kafka.consumer({ groupId: 'notification-service-group' });
 
+const app = express();
+app.get('/health', (req, res) => {
+  res.status(200).send('OK');
+});
+const PORT = process.env.NOTIFICATION_SERVICE_PORT || 3004;
+
 const startWorker = async () => {
   try {
+    app.listen(PORT, () => {
+      console.log(`Notification Service health check listening on port ${PORT}`);
+    });
+
     await consumer.connect();
     console.log('Notification Service connected to Kafka');
 

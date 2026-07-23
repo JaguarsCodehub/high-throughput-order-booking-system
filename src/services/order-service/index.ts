@@ -10,6 +10,11 @@ app.use(express.json());
 const producer = kafka.producer();
 const PORT = process.env.ORDER_SERVICE_PORT || 3001;
 
+// Health check endpoint for Kubernetes liveness/readiness probes
+app.get('/health', (req: Request, res: Response) => {
+  res.status(200).send('OK');
+});
+
 // Define a simple endpoint to create an order
 app.post('/api/orders', async (req: Request, res: Response): Promise<void> => {
   const { userId, items, totalAmount } = req.body;

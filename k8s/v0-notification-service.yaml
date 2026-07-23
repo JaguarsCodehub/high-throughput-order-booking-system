@@ -19,6 +19,25 @@ spec:
       - name: notification-service
         image: notification-service:latest
         imagePullPolicy: Never
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "250m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 3004
+          initialDelaySeconds: 10
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 3004
+          initialDelaySeconds: 5
+          periodSeconds: 10
         envFrom:
         - configMapRef:
             name: obs-config

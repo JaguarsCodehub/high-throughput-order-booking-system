@@ -1,3 +1,4 @@
+import express from 'express';
 import { kafka } from '../../kafka/client';
 import { TOPICS } from '../../kafka/topics';
 import { pool } from '../../db/client';
@@ -6,8 +7,18 @@ import { v4 as uuidv4 } from 'uuid';
 const consumer = kafka.consumer({ groupId: 'payment-service-group' });
 const producer = kafka.producer();
 
+const app = express();
+app.get('/health', (req, res) => {
+  res.status(200).send('OK');
+});
+const PORT = process.env.PAYMENT_SERVICE_PORT || 3003;
+
 const startWorker = async () => {
   try {
+    app.listen(PORT, () => {
+      console.log(`Payment Service health check listening on port ${PORT}`);
+    });
+
     await producer.connect();
     await consumer.connect();
     console.log('Payment Service connected to Kafka');

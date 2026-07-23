@@ -19,9 +19,26 @@ spec:
       containers:
       - name: order-service
         image: order-service:latest
-        imagePullPolicy: Never # Never for KIND local images, normally Always is the anti-pattern, but since we build locally for V0, Never is needed to use the loaded image.
-        # Anti-pattern: no resource limits
-        # Anti-pattern: no probes
+        imagePullPolicy: Never
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "250m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 3001
+          initialDelaySeconds: 10
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 3001
+          initialDelaySeconds: 5
+          periodSeconds: 10
         envFrom:
         - configMapRef:
             name: obs-config

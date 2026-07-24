@@ -36,7 +36,8 @@ spec:
           value: {{ $service.name | quote }}
         ports:
         - containerPort: {{ $service.port }}
-        resources: {{ toYaml $service.resources | indent 10 }}
+        resources:
+{{ toYaml $service.resources | indent 10 }}
         livenessProbe:
           httpGet:
             path: /health

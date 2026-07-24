@@ -16,7 +16,7 @@ COPY package.json package-lock.json ./
 RUN --mount=type=cache,target=/root/.npm npm ci --omit=dev
 
 FROM node:20-alpine AS runtime
-RUN apk add --no-cache tini
+RUN apk upgrade --no-cache && apk add --no-cache tini
 WORKDIR /app
 ENV NODE_ENV=production
 ARG SERVICE_NAME

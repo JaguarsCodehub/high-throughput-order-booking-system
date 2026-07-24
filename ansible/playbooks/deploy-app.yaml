@@ -33,6 +33,9 @@
         - payment-service
         - notification-service
 
+    - name: Ensure NGINX Ingress Controller is installed
+      ansible.builtin.command: kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/kind/deploy.yaml
+
     - name: Deploy Order Booking System using Helm
       ansible.builtin.command: helm upgrade --install obs {{ project_dir }}/helm/order-booking-system -n {{ namespace | default('obs-v0') }} --create-namespace
 

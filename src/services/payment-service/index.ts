@@ -8,7 +8,7 @@ const consumer = kafka.consumer({ groupId: 'payment-service-group' });
 const producer = kafka.producer();
 
 const app = express();
-app.get('/health', (req, res) => {
+app.get('/health', (_req, res) => {
   res.status(200).send('OK');
 });
 const PORT = process.env.PAYMENT_SERVICE_PORT || 3003;

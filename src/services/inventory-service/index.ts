@@ -7,7 +7,7 @@ const consumer = kafka.consumer({ groupId: 'inventory-service-group' });
 const producer = kafka.producer();
 
 const app = express();
-app.get('/health', (req, res) => {
+app.get('/health', (_req, res) => {
   res.status(200).send('OK');
 });
 const PORT = process.env.INVENTORY_SERVICE_PORT || 3002;

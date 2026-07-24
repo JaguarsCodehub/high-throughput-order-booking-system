@@ -6,7 +6,7 @@ import { pool } from '../../db/client';
 const consumer = kafka.consumer({ groupId: 'notification-service-group' });
 
 const app = express();
-app.get('/health', (req, res) => {
+app.get('/health', (_req, res) => {
   res.status(200).send('OK');
 });
 const PORT = process.env.NOTIFICATION_SERVICE_PORT || 3004;

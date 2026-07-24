@@ -1,7 +1,7 @@
 ---
-- name: Deploy Order Booking System
+- name: Deploy Order Booking System using GitOps
   hosts: all
-  become: no  # Run as ubuntu user for Docker and kubectl
+  become: no
   tasks:
     - name: Ensure KIND cluster is running
       ansible.builtin.shell: |
@@ -37,32 +37,7 @@
       ansible.builtin.command: kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/kind/deploy.yaml
       ignore_errors: yes
 
-    - name: Deploy Order Booking System using Helm
-      ansible.builtin.command: helm upgrade --install obs {{ project_dir }}/helm/order-booking-system -n {{ namespace | default('obs-v0') }} --create-namespace
-
-    - name: Wait for Kafka to be ready
-      ansible.builtin.shell: |
-        kubectl wait --for=condition=ready pod -l app=kafka -n {{ namespace | default('obs-v0') }} --timeout=120s
-      register: kafka_wait
-      retries: 3
-      delay: 10
-      until: kafka_wait.rc == 0
-
-    - name: Wait for order-service to be ready
-      ansible.builtin.shell: |
-        kubectl wait --for=condition=ready pod -l app=order-service -n {{ namespace | default('obs-v0') }} --timeout=60s
-
-    - name: Display cluster status
-      ansible.builtin.command: kubectl get pods -n {{ namespace }}
-      register: pods_status
-
-    - name: Print cluster status
-      ansible.builtin.debug:
-        msg: "{{ pods_status.stdout_lines }}"
-
     # ─── ArgoCD ─────────────────────────────────────────────────────────────────
-    # Note: Even though we deployed manually via Helm above, we are also 
-    # installing ArgoCD here. ArgoCD will adopt the existing Helm release.
     - name: Create ArgoCD namespace
       ansible.builtin.command: kubectl create namespace argocd
       ignore_errors: yes
@@ -85,7 +60,7 @@
     - name: Print ArgoCD access instructions
       ansible.builtin.debug:
         msg:
-          - "ArgoCD is ready!"
+          - "ArgoCD is ready and has taken over deployment!"
           - "To access the UI, run: kubectl port-forward svc/argocd-server -n argocd 8081:443"
           - "Then open: https://localhost:8081"
           - "Username: admin"

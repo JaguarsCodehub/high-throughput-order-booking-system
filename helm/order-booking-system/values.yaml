@@ -22,7 +22,7 @@ microservices:
         memory: "64Mi"
         cpu: "50m"
       limits:
-        memory: "256Mi"
+        memory: "257Mi"
         cpu: "250m"
     ingress:
       enabled: true

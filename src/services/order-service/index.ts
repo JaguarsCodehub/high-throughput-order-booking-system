@@ -99,12 +99,12 @@ app.post('/api/orders', async (req: Request, res: Response): Promise<void> => {
 
 const startServer = async () => {
   try {
-    await producer.connect();
-    console.log('Order Service Kafka Producer connected');
-    
     app.listen(PORT, () => {
       console.log(`Order Service listening on port ${PORT}`);
     });
+
+    await producer.connect();
+    console.log('Order Service Kafka Producer connected');
   } catch (error) {
     console.error('Failed to start Order Service:', error);
     process.exit(1);

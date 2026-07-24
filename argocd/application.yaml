@@ -1,0 +1,30 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: order-booking-system
+  namespace: argocd
+  # This finalizer ensures ArgoCD removes all deployed resources
+  # when this Application object is deleted. Always keep this!
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+
+  # Source: Where ArgoCD should pull the desired state from
+  source:
+    repoURL: https://github.com/JaguarsCodehub/high-throughput-order-booking-system.git
+    targetRevision: HEAD  # Always track the latest commit on the default branch
+    path: helm/order-booking-system  # The path inside the repo where our Helm chart lives
+
+  # Destination: Where ArgoCD should deploy to
+  destination:
+    server: https://kubernetes.default.svc  # The in-cluster Kubernetes API server
+    namespace: obs-v0
+
+  # Sync Policy: How ArgoCD should handle changes
+  syncPolicy:
+    automated:
+      prune: true     # Automatically delete resources that are removed from Git
+      selfHeal: true  # Automatically revert manual kubectl changes to match Git
+    syncOptions:
+      - CreateNamespace=true  # Create obs-v0 if it doesn't exist

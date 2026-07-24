@@ -59,3 +59,32 @@
     - name: Print cluster status
       ansible.builtin.debug:
         msg: "{{ pods_status.stdout_lines }}"
+
+    # ─── ArgoCD ─────────────────────────────────────────────────────────────────
+    - name: Create ArgoCD namespace
+      ansible.builtin.command: kubectl create namespace argocd
+      ignore_errors: yes  # Ignore error if namespace already exists
+
+    - name: Install ArgoCD
+      ansible.builtin.command: kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+      ignore_errors: yes  # Ignore errors on re-runs (immutable Job fields)
+
+    - name: Wait for ArgoCD server to be ready
+      ansible.builtin.shell: |
+        kubectl wait --for=condition=available deployment/argocd-server -n argocd --timeout=120s
+      register: argocd_wait
+      retries: 5
+      delay: 15
+      until: argocd_wait.rc == 0
+
+    - name: Apply ArgoCD Application manifest
+      ansible.builtin.command: kubectl apply -f {{ project_dir }}/argocd/application.yaml
+
+    - name: Print ArgoCD access instructions
+      ansible.builtin.debug:
+        msg:
+          - "ArgoCD is ready!"
+          - "To access the UI, run: kubectl port-forward svc/argocd-server -n argocd 8081:443"
+          - "Then open: https://localhost:8081"
+          - "Username: admin"
+          - "To get the initial password run: kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath='{.data.password}' | base64 -d"

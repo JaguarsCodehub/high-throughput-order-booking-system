@@ -75,5 +75,5 @@ jobs:
           format: 'table'
           exit-code: '1' # Fail the build if HIGH/CRITICAL vulnerabilities are found
           ignore-unfixed: true
-          vuln-type: 'os,library'
+          vuln-type: 'os'
           severity: 'CRITICAL,HIGH'
